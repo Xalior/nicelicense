@@ -1,0 +1,29 @@
+{
+  "name": "nicelicense",
+  "version": "0.1.0",
+  "description": "Pick and manage LICENSE files with a guided CLI.",
+  "bin": {
+    "nicelicense": "dist/nicelicense.js"
+  },
+  "type": "commonjs",
+  "license": "LGPL-3.0-only",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/add-shebang.js",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test"
+  },
+  "dependencies": {
+    "enquirer": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.4.2"
+  },
+  "files": [
+    "dist",
+    "data"
+  ]
+}
