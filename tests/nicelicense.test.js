@@ -17,6 +17,9 @@ test("parseArgs parses flags and values", () => {
   const args = [
     "--license",
     "MIT",
+    "--dry-run",
+    "--stdout",
+    "--validate",
     "--yes",
     "--json",
     "--verbose",
@@ -37,6 +40,9 @@ test("parseArgs parses flags and values", () => {
   ];
   const options = parseArgs(args);
   assert.equal(options.license, "MIT");
+  assert.equal(options.dryRun, true);
+  assert.equal(options.stdout, true);
+  assert.equal(options.validate, true);
   assert.equal(options.yes, true);
   assert.equal(options.json, true);
   assert.equal(options.verbose, true);
@@ -128,6 +134,25 @@ test("validateExistingLicense matches template placeholders", async () => {
 
 test("resolveOutputPath uses default LICENSE when --yes", async () => {
   const cwd = "/tmp";
-  const output = await resolveOutputPath(cwd, null, { yes: true, help: false, list: false });
+  const output = await resolveOutputPath(
+    cwd,
+    null,
+    { yes: true, help: false, list: false, dryRun: false, stdout: false, validate: false },
+    false
+  );
   assert.equal(output, path.join(cwd, "LICENSE"));
+});
+
+test("resolveOutputPath requires path in non-interactive mode", async () => {
+  const cwd = "/tmp";
+  await assert.rejects(
+    () =>
+      resolveOutputPath(
+        cwd,
+        null,
+        { yes: false, help: false, list: false, dryRun: false, stdout: false, validate: false },
+        true
+      ),
+    /Output path is required/
+  );
 });

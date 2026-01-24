@@ -348,3 +348,235 @@ test("cli reports unknown SPDX from custom data file", async () => {
   assert.notEqual(result.code, 0);
   assert.match(result.stderr, /Unknown license/);
 });
+
+test("cli --validate --json reports validated license", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-validate-"));
+  const licenseText = "Copyright (c) <year> <copyright holders>";
+  const replacements = [];
+  for (const token of ["<year>", "<copyright holders>"]) {
+    const start = licenseText.indexOf(token);
+    replacements.push({
+      field: token === "<year>" ? "years" : "name",
+      start,
+      end: start + token.length
+    });
+  }
+  const sha = crypto.createHash("sha256").update(licenseText).digest("hex");
+  const dataUrl = `data:text/plain,${encodeURIComponent(licenseText)}`;
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify(
+      [
+        {
+          spdx: "MIT",
+          name: "MIT License",
+          url: dataUrl,
+          sha256: sha,
+          template: {
+            fields: ["years", "name"],
+            replacements
+          }
+        }
+      ],
+      null,
+      2
+    ) + "\n"
+  );
+  fs.writeFileSync(path.join(tempDir, "LICENSE"), "Copyright (c) 2024 Jane Doe");
+
+  const result = await runCli(["--validate", "--json"], tempDir, {
+    NICELICENSE_DATA: dataPath
+  });
+  assert.equal(result.code, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "validated");
+  assert.equal(parsed.spdx, "MIT");
+});
+
+test("cli --validate --json reports missing license", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-validate-missing-"));
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify([{ spdx: "MIT", name: "MIT License", url: "https://example.com/mit" }]) +
+      "\n"
+  );
+
+  const result = await runCli(["--validate", "--json"], tempDir, {
+    NICELICENSE_DATA: dataPath
+  });
+  assert.equal(result.code, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "missing");
+});
+
+test("cli --dry-run --json emits plan without writing", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-dry-run-"));
+  const licenseText = "MIT License\n\nCopyright (c) <year> <copyright holders>";
+  const replacements = [];
+  for (const token of ["<year>", "<copyright holders>"]) {
+    const start = licenseText.indexOf(token);
+    replacements.push({
+      field: token === "<year>" ? "years" : "name",
+      start,
+      end: start + token.length
+    });
+  }
+  const sha = crypto.createHash("sha256").update(licenseText).digest("hex");
+  const dataUrl = `data:text/plain,${encodeURIComponent(licenseText)}`;
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify(
+      [
+        {
+          spdx: "MIT",
+          name: "MIT License",
+          url: dataUrl,
+          sha256: sha,
+          template: {
+            fields: ["years", "name"],
+            replacements
+          }
+        }
+      ],
+      null,
+      2
+    ) + "\n"
+  );
+  const pkgPath = path.join(tempDir, "package.json");
+  fs.writeFileSync(pkgPath, JSON.stringify({ name: "demo", license: "Apache-2.0" }, null, 2));
+
+  const result = await runCli(
+    ["--license", "MIT", "--yes", "--name", "Jane Doe", "--years", "2024", "--dry-run", "--json"],
+    tempDir,
+    { NICELICENSE_DATA: dataPath }
+  );
+  assert.equal(result.code, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "dry_run");
+  assert.equal(fs.existsSync(path.join(tempDir, "LICENSE")), false);
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+  assert.equal(pkg.license, "Apache-2.0");
+});
+
+test("cli --stdout --json emits license text without writing", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-stdout-"));
+  const licenseText = "MIT License\n\nCopyright (c) <year> <copyright holders>";
+  const replacements = [];
+  for (const token of ["<year>", "<copyright holders>"]) {
+    const start = licenseText.indexOf(token);
+    replacements.push({
+      field: token === "<year>" ? "years" : "name",
+      start,
+      end: start + token.length
+    });
+  }
+  const sha = crypto.createHash("sha256").update(licenseText).digest("hex");
+  const dataUrl = `data:text/plain,${encodeURIComponent(licenseText)}`;
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify(
+      [
+        {
+          spdx: "MIT",
+          name: "MIT License",
+          url: dataUrl,
+          sha256: sha,
+          template: {
+            fields: ["years", "name"],
+            replacements
+          }
+        }
+      ],
+      null,
+      2
+    ) + "\n"
+  );
+
+  const result = await runCli(
+    [
+      "--license",
+      "MIT",
+      "--yes",
+      "--name",
+      "Jane Doe",
+      "--years",
+      "2024",
+      "--stdout",
+      "--json"
+    ],
+    tempDir,
+    { NICELICENSE_DATA: dataPath }
+  );
+  assert.equal(result.code, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "stdout");
+  assert.match(parsed.licenseText, /Copyright \(c\) 2024 Jane Doe/);
+  assert.equal(fs.existsSync(path.join(tempDir, "LICENSE")), false);
+});
+
+test("cli --json requires --license in non-interactive mode", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-json-missing-license-"));
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify([{ spdx: "MIT", name: "MIT License", url: "https://example.com/mit" }]) +
+      "\n"
+  );
+
+  const result = await runCli(["--json", "--data", dataPath], tempDir, {});
+  assert.equal(result.code, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "error");
+  assert.match(parsed.message, /License selection required/);
+});
+
+test("cli --json requires --yes to overwrite existing license", async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-json-overwrite-"));
+  const licenseText = "MIT License\n\nCopyright (c) <year> <copyright holders>";
+  const replacements = [];
+  for (const token of ["<year>", "<copyright holders>"]) {
+    const start = licenseText.indexOf(token);
+    replacements.push({
+      field: token === "<year>" ? "years" : "name",
+      start,
+      end: start + token.length
+    });
+  }
+  const sha = crypto.createHash("sha256").update(licenseText).digest("hex");
+  const dataUrl = `data:text/plain,${encodeURIComponent(licenseText)}`;
+  const dataPath = path.join(tempDir, "licenses.json");
+  fs.writeFileSync(
+    dataPath,
+    JSON.stringify(
+      [
+        {
+          spdx: "MIT",
+          name: "MIT License",
+          url: dataUrl,
+          sha256: sha,
+          template: {
+            fields: ["years", "name"],
+            replacements
+          }
+        }
+      ],
+      null,
+      2
+    ) + "\n"
+  );
+  fs.writeFileSync(path.join(tempDir, "LICENSE"), "Existing license text\n");
+
+  const result = await runCli(
+    ["--license", "MIT", "--name", "Jane Doe", "--years", "2024", "--json"],
+    tempDir,
+    { NICELICENSE_DATA: dataPath }
+  );
+  assert.equal(result.code, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.status, "error");
+  assert.match(parsed.message, /Overwrite confirmation required/);
+});

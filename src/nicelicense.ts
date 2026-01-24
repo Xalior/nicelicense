@@ -51,6 +51,9 @@ type CliOptions = {
   software?: string;
   description?: string;
   organization?: string;
+  dryRun: boolean;
+  stdout: boolean;
+  validate: boolean;
   yes: boolean;
   help: boolean;
   list: boolean;
@@ -59,7 +62,16 @@ type CliOptions = {
 };
 
 function parseArgs(argv: string[]): CliOptions {
-  const options: CliOptions = { yes: false, help: false, list: false, json: false, verbose: false };
+  const options: CliOptions = {
+    dryRun: false,
+    stdout: false,
+    validate: false,
+    yes: false,
+    help: false,
+    list: false,
+    json: false,
+    verbose: false
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--yes" || arg === "-y") {
@@ -80,6 +92,18 @@ function parseArgs(argv: string[]): CliOptions {
     }
     if (arg === "--verbose" || arg === "-v") {
       options.verbose = true;
+      continue;
+    }
+    if (arg === "--dry-run") {
+      options.dryRun = true;
+      continue;
+    }
+    if (arg === "--stdout") {
+      options.stdout = true;
+      continue;
+    }
+    if (arg === "--validate") {
+      options.validate = true;
       continue;
     }
     if (arg === "--license") {
@@ -167,7 +191,35 @@ function parseArgs(argv: string[]): CliOptions {
 }
 
 function printHelp(): void {
-  console.log(`nicelicense\n\nUsage:\n  nicelicense [--license <SPDX>] [--yes]\n  nicelicense --list\n\nOptions:\n  --license <SPDX>     Select a license without prompting\n  --data <path>        Load licenses from a custom JSON file\n  --path <path>        Write the license to a specific path\n  --name <name>        License holder name\n  --email <email>      License holder email\n  --years <years>      Copyright years (e.g. 2024 or 2020-2024)\n  --software <name>    Software/project name\n  --description <text> Project description\n  --organization <org> Organization name\n  --list               Print supported SPDX IDs\n  --verbose            Include URLs and metadata with --list\n  --json               Emit machine-readable JSON output\n  --yes                Accept prompts (overwrite/license field updates)\n  -h, --help           Show this help\n`);
+  const help = [
+    "nicelicense",
+    "",
+    "Usage:",
+    "  nicelicense [--license <SPDX>] [--yes]",
+    "  nicelicense --list",
+    "  nicelicense --validate",
+    "",
+    "Options:",
+    "  --license <SPDX>     Select a license without prompting",
+    "  --data <path>        Load licenses from a custom JSON file",
+    "  --path <path>        Write the license to a specific path",
+    "  --name <name>        License holder name",
+    "  --email <email>      License holder email",
+    "  --years <years>      Copyright years (e.g. 2024 or 2020-2024)",
+    "  --software <name>    Software/project name",
+    "  --description <text> Project description",
+    "  --organization <org> Organization name",
+    "  --list               Print supported SPDX IDs",
+    "  --validate           Validate existing LICENSE file",
+    "  --dry-run            Do not write files or update package.json",
+    "  --stdout             Emit license text to stdout (no files written)",
+    "  --verbose            Include URLs and metadata with --list",
+    "  --json               Emit machine-readable JSON output",
+    "  --yes                Accept prompts (overwrite/license field updates)",
+    "  -h, --help           Show this help",
+    ""
+  ];
+  console.log(help.join("\n"));
 }
 
 async function loadLicenses(dataPath?: string): Promise<LicenseEntry[]> {
@@ -451,7 +503,8 @@ function outputJson(payload: unknown): void {
 async function updatePackageJsonLicense(
   cwd: string,
   spdx: string,
-  options: CliOptions
+  options: CliOptions,
+  nonInteractive: boolean
 ): Promise<{ updated: boolean; path: string | null }> {
   const pkgPath = path.join(cwd, "package.json");
   try {
@@ -462,6 +515,11 @@ async function updatePackageJsonLicense(
       return { updated: false, path: pkgPath };
     }
     if (current && current !== spdx) {
+      if (nonInteractive && !options.yes) {
+        throw new Error(
+          "package.json license update requires confirmation in non-interactive mode. Provide --yes."
+        );
+      }
       const confirmed = await confirmUpdatePackageJson(current, spdx, options);
       if (!confirmed) {
         return { updated: false, path: pkgPath };
@@ -486,7 +544,8 @@ async function writeLicenseFile(filePath: string, text: string): Promise<void> {
 async function resolveOutputPath(
   cwd: string,
   existing: ExistingLicense | null,
-  options: CliOptions
+  options: CliOptions,
+  nonInteractive: boolean
 ): Promise<string> {
   if (options.path) {
     return path.resolve(cwd, options.path);
@@ -496,6 +555,9 @@ async function resolveOutputPath(
   }
   if (options.yes) {
     return path.join(cwd, "LICENSE");
+  }
+  if (nonInteractive) {
+    throw new Error("Output path is required in non-interactive mode. Provide --path or --yes.");
   }
   const prompt = new Input({
     message: "Where do you want to save the file",
@@ -511,6 +573,7 @@ async function resolveOutputPath(
 async function main(): Promise<void> {
   const cwd = process.cwd();
   const options = parseArgs(process.argv.slice(2));
+  const nonInteractive = options.json && !process.stdin.isTTY;
   try {
     if (options.help) {
       printHelp();
@@ -548,6 +611,39 @@ async function main(): Promise<void> {
       }
       return;
     }
+    if (options.validate) {
+      const existing = await findExistingLicense(cwd);
+      if (!existing) {
+        if (options.json) {
+          outputJson({ status: "missing", message: "No LICENSE file found." });
+        } else {
+          console.log("No LICENSE file found.");
+        }
+        return;
+      }
+      const result = await validateExistingLicense(existing, licenses);
+      if (result.match) {
+        if (options.json) {
+          outputJson({
+            status: "validated",
+            spdx: result.match.spdx,
+            name: result.match.name,
+            path: existing.filePath
+          });
+        } else {
+          console.log(`Validated ${existing.filename} as ${result.match.spdx}.`);
+        }
+        return;
+      }
+      const message = result.error?.message ?? "LICENSE did not match any known template.";
+      if (options.json) {
+        outputJson({ status: "unmatched", message, path: existing.filePath });
+      } else {
+        console.error(message);
+      }
+      process.exitCode = 1;
+      return;
+    }
     const defaults = await getDefaults(cwd);
     const existing = await findExistingLicense(cwd);
     const requestedLicense = options.license
@@ -566,7 +662,7 @@ async function main(): Promise<void> {
     }
 
     if (existing) {
-      if (!options.json) {
+      if (!options.json && !options.stdout) {
         console.log(`Found ${existing.filename}.`);
       }
       if (!requestedLicense) {
@@ -574,6 +670,11 @@ async function main(): Promise<void> {
           outputJson({ status: "existing", path: existing.filePath });
         }
         return;
+      }
+      if (nonInteractive && !options.yes) {
+        throw new Error(
+          "Overwrite confirmation required in non-interactive mode. Provide --yes to proceed."
+        );
       }
       const overwrite = await confirmOverwrite(existing, options);
       if (!overwrite) {
@@ -589,6 +690,9 @@ async function main(): Promise<void> {
       }
     }
 
+    if (!requestedLicense && nonInteractive) {
+      throw new Error("License selection required in non-interactive mode. Provide --license.");
+    }
     const selected = requestedLicense ?? (await chooseLicense(licenses));
     if (!selected) {
       if (options.json) {
@@ -599,15 +703,55 @@ async function main(): Promise<void> {
       return;
     }
 
-    if (!options.json) {
+    if (!options.json && !options.stdout) {
       console.log(`Downloading ${selected.spdx}...`);
     }
     const downloaded = await downloadLicense(selected);
+    if (nonInteractive && !options.yes) {
+      const needed = selected.template?.fields ?? [];
+      const missing = needed.filter((field) => {
+        const provided = options[field as keyof CliOptions];
+        return !(typeof provided === "string" && provided.trim().length > 0);
+      });
+      if (missing.length > 0) {
+        throw new Error(
+          `Missing required fields in non-interactive mode: ${missing.join(", ")}.`
+        );
+      }
+    }
     const values = await promptForFields(selected, options, defaults);
     const templated = applyTemplate(downloaded, selected, values);
-    const targetPath = await resolveOutputPath(cwd, existing, options);
+    if (options.stdout) {
+      if (options.json) {
+        outputJson({
+          status: "stdout",
+          spdx: selected.spdx,
+          name: selected.name,
+          licenseText: templated,
+          warnings: selected.warnings ?? []
+        });
+      } else {
+        process.stdout.write(templated.trimEnd() + "\n");
+      }
+      return;
+    }
+    const targetPath = await resolveOutputPath(cwd, existing, options, nonInteractive);
+    if (options.dryRun) {
+      if (options.json) {
+        outputJson({
+          status: "dry_run",
+          spdx: selected.spdx,
+          name: selected.name,
+          path: targetPath,
+          warnings: selected.warnings ?? []
+        });
+      } else {
+        console.log(`Dry run: would write ${path.basename(targetPath)}.`);
+      }
+      return;
+    }
     await writeLicenseFile(targetPath, templated);
-    const updateResult = await updatePackageJsonLicense(cwd, selected.spdx, options);
+    const updateResult = await updatePackageJsonLicense(cwd, selected.spdx, options, nonInteractive);
     if (options.json) {
       outputJson({
         status: "written",
