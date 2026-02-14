@@ -47,6 +47,10 @@ npx nicelicense --list --json
 - Updates the `license` field in `package.json` when present.
 - Uses `git config user.name` and `user.email` as defaults when available.
 
+## Changelog
+
+See [docs/CHANGELOG.md](docs/CHANGELOG.md) for release history.
+
 ## License list
 
 Extend `data/licenses.json` to add more SPDX IDs and source URLs.
