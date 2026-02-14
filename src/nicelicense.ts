@@ -211,7 +211,7 @@ function printHelp(): void {
     "  --description <text> Project description",
     "  --organization <org> Organization name",
     "  --list               Print supported SPDX IDs",
-    "  --validate           Validate existing LICENSE file",
+    "  --validate           Identify existing LICENSE file",
     "  --dry-run            Do not write files or update package.json",
     "  --stdout             Emit license text to stdout (no files written)",
     "  --verbose            Include URLs and metadata with --list",
@@ -259,7 +259,6 @@ function sha256(text: string): string {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-
 async function fetchLicenseText(url: string): Promise<string> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -292,7 +291,7 @@ function identifyLicense(
   existing: ExistingLicense,
   licenses: LicenseEntry[]
 ): LicenseIdentification | null {
-  const normalized = normalize(existing.text);
+  const normalized = normalize(existing.text).toLowerCase();
   let bestMatch: LicenseIdentification | null = null;
 
   for (const license of licenses) {
@@ -303,7 +302,7 @@ function identifyLicense(
     let matchedCount = 0;
     for (const fingerprint of license.fingerprints) {
       // Case-insensitive substring match
-      if (normalized.toLowerCase().includes(fingerprint.toLowerCase())) {
+      if (normalized.includes(fingerprint.toLowerCase())) {
         matchedCount++;
       }
     }
