@@ -54,6 +54,16 @@ The new approach:
 - Implementation complete. All tasks finished.
 - Branch ready for review and PR creation.
 
+### 2026-02-14 15:30
+- Fixed 6 issues identified in code review:
+  1. BSD-3-Clause fingerprint: now uses full "Neither the name...endorse or promote" clause
+  2. BSD-2-Clause fingerprint: replaced "IN NO EVENT SHALL" with "Redistributions in binary form"
+  3. ISC fingerprint: replaced "ISC" (too generic, matches "DISCLAIMER") with "with or without fee"
+  4. GPL-3.0-or-later: added 4th fingerprint to improve distinction
+  5. Performance: moved .toLowerCase() outside loop (called once instead of per-fingerprint)
+  6. Documentation: updated help text and CLAUDE.md to say "Identify" instead of "Validate"
+- All 22 tests still passing after fingerprint improvements.
+
 ## Decisions & Notes
 
 - **Scope**: Focus on popular/common licenses first, expand coverage iteratively
@@ -73,3 +83,6 @@ The new approach:
 a2ad3fa - refactor: replace regex validation with fingerprint-based identification
 f8d68f3 - test: update tests for fingerprint-based identification
 0b540ec - docs: update documentation for identification instead of validation
+8e3a0c3 - wip: mark refactor complete - all tasks finished
+f637493 - fix: help text, toLowerCase optimization, cosmetic cleanup
+18b1799 - fix: improve fingerprint specificity to avoid false matches
