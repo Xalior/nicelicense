@@ -65,7 +65,7 @@
     "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
     "fingerprints": [
       "Redistribution and use in source and binary forms",
-      "Neither the name of",
+      "Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote",
       "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS"
     ],
     "template": {
@@ -94,8 +94,8 @@
     "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df",
     "fingerprints": [
       "Redistribution and use in source and binary forms",
-      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS",
-      "IN NO EVENT SHALL"
+      "Redistributions in binary form must reproduce the above copyright notice",
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS"
     ],
     "template": {
       "fields": [
@@ -123,7 +123,7 @@
     "sha256": "f2ec607f67bb0dd3053b49835b02110d5cd0f8eb6da3aac4dc0b142a6b299be9",
     "fingerprints": [
       "Permission to use, copy, modify, and/or distribute this software",
-      "ISC",
+      "with or without fee",
       "THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS"
     ]
   },
@@ -170,7 +170,8 @@
     "fingerprints": [
       "GNU GENERAL PUBLIC LICENSE",
       "Version 3, 29 June 2007",
-      "either version 3 of the License, or (at your option) any later version"
+      "either version 3 of the License, or (at your option) any later version",
+      "How to Apply These Terms to Your New Programs"
     ]
   },
   {
