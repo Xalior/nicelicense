@@ -25,12 +25,12 @@ The new approach:
 
 ### Tasks
 
-- [ ] Fetch and understand SPDX license list structure
-- [ ] Design identification signature system (distinctive phrases per license)
-- [ ] Remove regex-based validation code (`buildLicenseRegex`, parts of `normalize`)
+- [x] Fetch and understand SPDX license list structure
+- [x] Design identification signature system (distinctive phrases per license)
+- [ ] Add fingerprints to data/licenses.json
+- [ ] Remove regex-based validation code (`buildLicenseRegex`)
 - [ ] Implement new `identifyLicense()` function with keyword matching
-- [ ] Update `--validate` flag to return identification results instead
-- [ ] Update data/licenses.json with identification signatures
+- [ ] Update `validateExistingLicense()` to use identification instead
 - [ ] Update tests to match new behavior
 - [ ] Update documentation (README, AGENTS.md, CLAUDE.md)
 
@@ -39,6 +39,8 @@ The new approach:
 ### 2026-02-14 14:30
 - Started work. Branch created from `main` at `dcaaa9b94f4703b3a42adada64a595b7be673930`.
 - Pre-flight checks complete: clean working tree, on main, synced with remote.
+- Researched SPDX license list - confirmed we cover the most popular licenses.
+- Designed fingerprint system: 2-4 distinctive phrases per license stored in licenses.json.
 
 ## Decisions & Notes
 
