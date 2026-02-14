@@ -201,7 +201,8 @@ test("cli --json reports existing license without validation", async () => {
   assert.equal(result.code, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.status, "existing");
-  assert.equal(parsed.path, licensePath);
+  // Use fs.realpathSync to normalize paths (macOS /var vs /private/var)
+  assert.equal(fs.realpathSync(parsed.path), fs.realpathSync(licensePath));
 });
 
 test("cli overwrites existing LICENSE when --yes is set", async () => {
@@ -349,20 +350,8 @@ test("cli reports unknown SPDX from custom data file", async () => {
   assert.match(result.stderr, /Unknown license/);
 });
 
-test("cli --validate --json reports validated license", async () => {
+test("cli --validate --json reports identified license", async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "nicelicense-validate-"));
-  const licenseText = "Copyright (c) <year> <copyright holders>";
-  const replacements = [];
-  for (const token of ["<year>", "<copyright holders>"]) {
-    const start = licenseText.indexOf(token);
-    replacements.push({
-      field: token === "<year>" ? "years" : "name",
-      start,
-      end: start + token.length
-    });
-  }
-  const sha = crypto.createHash("sha256").update(licenseText).digest("hex");
-  const dataUrl = `data:text/plain,${encodeURIComponent(licenseText)}`;
   const dataPath = path.join(tempDir, "licenses.json");
   fs.writeFileSync(
     dataPath,
@@ -371,27 +360,31 @@ test("cli --validate --json reports validated license", async () => {
         {
           spdx: "MIT",
           name: "MIT License",
-          url: dataUrl,
-          sha256: sha,
-          template: {
-            fields: ["years", "name"],
-            replacements
-          }
+          url: "https://example.com/mit",
+          fingerprints: [
+            "Permission is hereby granted, free of charge",
+            "THE SOFTWARE IS PROVIDED \"AS IS\""
+          ]
         }
       ],
       null,
       2
     ) + "\n"
   );
-  fs.writeFileSync(path.join(tempDir, "LICENSE"), "Copyright (c) 2024 Jane Doe");
+  fs.writeFileSync(
+    path.join(tempDir, "LICENSE"),
+    "MIT License\n\nCopyright (c) 2024 Jane Doe\n\nPermission is hereby granted, free of charge, to any person obtaining a copy.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND."
+  );
 
   const result = await runCli(["--validate", "--json"], tempDir, {
     NICELICENSE_DATA: dataPath
   });
   assert.equal(result.code, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
-  assert.equal(parsed.status, "validated");
+  assert.equal(parsed.status, "identified");
   assert.equal(parsed.spdx, "MIT");
+  assert.equal(parsed.confidence, 1.0);
+  assert.equal(parsed.matchedFingerprints, 2);
 });
 
 test("cli --validate --json reports missing license", async () => {

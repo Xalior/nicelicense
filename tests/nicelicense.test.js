@@ -8,9 +8,9 @@ const path = require("node:path");
 const {
   applyTemplate,
   downloadLicense,
+  identifyLicense,
   parseArgs,
-  resolveOutputPath,
-  validateExistingLicense
+  resolveOutputPath
 } = require("../dist/nicelicense.js");
 
 test("parseArgs parses flags and values", () => {
@@ -100,36 +100,35 @@ test("downloadLicense enforces sha256 fingerprint", async () => {
   }
 });
 
-test("validateExistingLicense matches template placeholders", async () => {
-  const originalFetch = global.fetch;
-  const template = "Copyright (c) <year> <owner>";
-  const sha = crypto.createHash("sha256").update(template).digest("hex");
-  global.fetch = async () => ({
-    ok: true,
-    status: 200,
-    statusText: "OK",
-    text: async () => template
-  });
-
-  try {
-    const existing = {
-      filePath: "/tmp/LICENSE",
-      filename: "LICENSE",
-      text: "Copyright (c) 2024 Jane Doe"
-    };
-    const licenses = [
-      {
-        spdx: "BSD-2-Clause",
-        name: "BSD 2-Clause License",
-        url: "https://example.com/bsd-2",
-        sha256: sha
-      }
-    ];
-    const result = await validateExistingLicense(existing, licenses);
-    assert.equal(result.match?.spdx, "BSD-2-Clause");
-  } finally {
-    global.fetch = originalFetch;
-  }
+test("identifyLicense matches fingerprints", () => {
+  const existing = {
+    filePath: "/tmp/LICENSE",
+    filename: "LICENSE",
+    text: "Permission is hereby granted, free of charge, to any person obtaining a copy of this software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND."
+  };
+  const licenses = [
+    {
+      spdx: "MIT",
+      name: "MIT License",
+      url: "https://example.com/mit",
+      fingerprints: [
+        "Permission is hereby granted, free of charge",
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND"
+      ]
+    },
+    {
+      spdx: "BSD-2-Clause",
+      name: "BSD 2-Clause License",
+      url: "https://example.com/bsd-2",
+      fingerprints: [
+        "Redistribution and use in source and binary forms"
+      ]
+    }
+  ];
+  const result = identifyLicense(existing, licenses);
+  assert.equal(result.license.spdx, "MIT");
+  assert.equal(result.confidence, 1.0);
+  assert.equal(result.matchedFingerprints, 2);
 });
 
 test("resolveOutputPath uses default LICENSE when --yes", async () => {
