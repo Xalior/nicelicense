@@ -5,7 +5,7 @@ Audience
   It is not for maintainers or contributors.
 
 Purpose
-  Generate or validate LICENSE files using a stable, machine-friendly contract.
+  Generate or identify LICENSE files using a stable, machine-friendly contract.
 
 Quick start (non-interactive)
   1) List licenses and required template fields:
@@ -32,7 +32,7 @@ CLI flags
   --description <text> Project description
   --organization <org> Organization name
   --list               Print supported SPDX IDs
-  --validate           Validate existing LICENSE file
+  --validate           Identify existing LICENSE file
   --dry-run            Do not write files or update package.json
   --stdout             Emit license text to stdout (no files written)
   --verbose            Include URLs and metadata with --list
@@ -102,9 +102,9 @@ JSON outputs (when --json is provided)
   5) Error
      { "status": "error", "message": "Human-readable error message" }
 
-  6) Validate existing license
-     { "status": "validated", "spdx": "MIT", "name": "MIT License", "path": "/abs/path/LICENSE" }
-     { "status": "unmatched", "message": "Reason", "path": "/abs/path/LICENSE" }
+  6) Identify existing license (--validate)
+     { "status": "identified", "spdx": "MIT", "name": "MIT License", "path": "/abs/path/LICENSE", "confidence": 1.0, "confidencePercent": "100%", "matchedFingerprints": 3, "totalFingerprints": 3 }
+     { "status": "unknown", "message": "Could not identify LICENSE - no matching fingerprints found.", "path": "/abs/path/LICENSE" }
      { "status": "missing", "message": "No LICENSE file found." }
 
 Exit codes

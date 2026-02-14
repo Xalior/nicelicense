@@ -42,7 +42,7 @@ npx nicelicense --list --json
 
 ## What it does
 
-- Detects an existing LICENSE file and validates it against known SPDX templates.
+- Detects an existing LICENSE file and identifies it using distinctive fingerprints.
 - Downloads license text from canonical URLs on selection and verifies fingerprints.
 - Updates the `license` field in `package.json` when present.
 - Uses `git config user.name` and `user.email` as defaults when available.
