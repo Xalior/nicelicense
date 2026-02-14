@@ -5,13 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyTemplate = applyTemplate;
-exports.buildLicenseRegex = buildLicenseRegex;
 exports.downloadLicense = downloadLicense;
+exports.identifyLicense = identifyLicense;
 exports.normalize = normalize;
 exports.parseArgs = parseArgs;
 exports.resolveOutputPath = resolveOutputPath;
 exports.sha256 = sha256;
-exports.validateExistingLicense = validateExistingLicense;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
@@ -169,7 +168,7 @@ function printHelp() {
         "  --description <text> Project description",
         "  --organization <org> Organization name",
         "  --list               Print supported SPDX IDs",
-        "  --validate           Validate existing LICENSE file",
+        "  --validate           Identify existing LICENSE file",
         "  --dry-run            Do not write files or update package.json",
         "  --stdout             Emit license text to stdout (no files written)",
         "  --verbose            Include URLs and metadata with --list",
@@ -212,14 +211,6 @@ function normalize(text) {
 function sha256(text) {
     return crypto_1.default.createHash("sha256").update(text).digest("hex");
 }
-function buildLicenseRegex(templateText) {
-    const normalized = normalize(templateText);
-    const tokenized = normalized.replace(/<[^>]+>|\[[^\]]+\]/g, "__LICENSE_TOKEN__");
-    const escaped = tokenized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const withTokens = escaped.replace(/__LICENSE_TOKEN__/g, ".+?");
-    const pattern = withTokens.replace(/ /g, "\\s+");
-    return new RegExp(`^${pattern}$`, "s");
-}
 async function fetchLicenseText(url) {
     const response = await fetch(url);
     if (!response.ok) {
@@ -237,24 +228,38 @@ async function downloadLicense(license) {
     }
     return text;
 }
-async function validateExistingLicense(existing, licenses) {
-    const normalized = normalize(existing.text);
-    let firstError = null;
+function identifyLicense(existing, licenses) {
+    const normalized = normalize(existing.text).toLowerCase();
+    let bestMatch = null;
     for (const license of licenses) {
-        try {
-            const remoteText = await downloadLicense(license);
-            const regex = buildLicenseRegex(remoteText);
-            if (regex.test(normalized)) {
-                return { match: license, error: null };
+        if (!license.fingerprints || license.fingerprints.length === 0) {
+            continue;
+        }
+        let matchedCount = 0;
+        for (const fingerprint of license.fingerprints) {
+            // Case-insensitive substring match
+            if (normalized.includes(fingerprint.toLowerCase())) {
+                matchedCount++;
             }
         }
-        catch (error) {
-            if (!firstError) {
-                firstError = error;
+        if (matchedCount > 0) {
+            const confidence = matchedCount / license.fingerprints.length;
+            const identification = {
+                license,
+                confidence,
+                matchedFingerprints: matchedCount,
+                totalFingerprints: license.fingerprints.length
+            };
+            // Update best match if this has higher confidence or more matches
+            if (!bestMatch ||
+                identification.confidence > bestMatch.confidence ||
+                (identification.confidence === bestMatch.confidence &&
+                    identification.matchedFingerprints > bestMatch.matchedFingerprints)) {
+                bestMatch = identification;
             }
         }
     }
-    return { match: null, error: firstError };
+    return bestMatch;
 }
 async function chooseLicense(licenses) {
     const choices = licenses.map((license) => ({
@@ -522,29 +527,33 @@ async function main() {
                 }
                 return;
             }
-            const result = await validateExistingLicense(existing, licenses);
-            if (result.match) {
+            const identification = identifyLicense(existing, licenses);
+            if (identification) {
+                const confidencePercent = Math.round(identification.confidence * 100);
                 if (options.json) {
                     outputJson({
-                        status: "validated",
-                        spdx: result.match.spdx,
-                        name: result.match.name,
-                        path: existing.filePath
+                        status: "identified",
+                        spdx: identification.license.spdx,
+                        name: identification.license.name,
+                        path: existing.filePath,
+                        confidence: identification.confidence,
+                        confidencePercent: `${confidencePercent}%`,
+                        matchedFingerprints: identification.matchedFingerprints,
+                        totalFingerprints: identification.totalFingerprints
                     });
                 }
                 else {
-                    console.log(`Validated ${existing.filename} as ${result.match.spdx}.`);
+                    console.log(`Identified ${existing.filename} as ${identification.license.spdx} (${confidencePercent}% confidence, ${identification.matchedFingerprints}/${identification.totalFingerprints} fingerprints matched).`);
                 }
                 return;
             }
-            const message = result.error?.message ?? "LICENSE did not match any known template.";
+            const message = "Could not identify LICENSE - no matching fingerprints found.";
             if (options.json) {
-                outputJson({ status: "unmatched", message, path: existing.filePath });
+                outputJson({ status: "unknown", message, path: existing.filePath });
             }
             else {
-                console.error(message);
+                console.log(message);
             }
-            process.exitCode = 1;
             return;
         }
         const defaults = await getDefaults(cwd);

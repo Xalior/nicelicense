@@ -8,7 +8,7 @@ Best practices
   - Use --yes + provide all required fields to avoid prompts.
   - Discover required fields via: nicelicense --list --json
   - If a LICENSE already exists and you do not intend to overwrite, omit --license.
-  - Use --validate for audits, --dry-run to plan changes, and --stdout to capture text.
+  - Use --validate to identify licenses, --dry-run to plan changes, and --stdout to capture text.
 
 Safe, non-interactive flow
   1) List licenses:

@@ -4,6 +4,11 @@
     "name": "MIT License",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/MIT.txt",
     "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5",
+    "fingerprints": [
+      "Permission is hereby granted, free of charge",
+      "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND",
+      "to deal in the Software without restriction"
+    ],
     "template": {
       "fields": [
         "years",
@@ -28,6 +33,12 @@
     "name": "Apache License 2.0",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/Apache-2.0.txt",
     "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+    "fingerprints": [
+      "Apache License",
+      "Version 2.0, January 2004",
+      "http://www.apache.org/licenses/",
+      "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION"
+    ],
     "template": {
       "fields": [
         "years",
@@ -52,6 +63,11 @@
     "name": "BSD 3-Clause License",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/BSD-3-Clause.txt",
     "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
+    "fingerprints": [
+      "Redistribution and use in source and binary forms",
+      "Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote",
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS"
+    ],
     "template": {
       "fields": [
         "years",
@@ -76,6 +92,11 @@
     "name": "BSD 2-Clause License",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/BSD-2-Clause.txt",
     "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df",
+    "fingerprints": [
+      "Redistribution and use in source and binary forms",
+      "Redistributions in binary form must reproduce the above copyright notice",
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS"
+    ],
     "template": {
       "fields": [
         "years",
@@ -99,36 +120,69 @@
     "spdx": "ISC",
     "name": "ISC License",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/ISC.txt",
-    "sha256": "f2ec607f67bb0dd3053b49835b02110d5cd0f8eb6da3aac4dc0b142a6b299be9"
+    "sha256": "f2ec607f67bb0dd3053b49835b02110d5cd0f8eb6da3aac4dc0b142a6b299be9",
+    "fingerprints": [
+      "Permission to use, copy, modify, and/or distribute this software",
+      "with or without fee",
+      "THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS"
+    ]
   },
   {
     "spdx": "MPL-2.0",
     "name": "Mozilla Public License 2.0",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/MPL-2.0.txt",
-    "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172"
+    "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172",
+    "fingerprints": [
+      "Mozilla Public License Version 2.0",
+      "Covered Software is governed by the terms of this License",
+      "Incompatible With Secondary Licenses"
+    ]
   },
   {
     "spdx": "LGPL-3.0-only",
     "name": "GNU Lesser General Public License v3.0 only",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/LGPL-3.0-only.txt",
-    "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+    "fingerprints": [
+      "GNU LESSER GENERAL PUBLIC LICENSE",
+      "Version 3, 29 June 2007",
+      "the terms of the GNU General Public License, version 3",
+      "Combined Works"
+    ]
   },
   {
     "spdx": "GPL-3.0-only",
     "name": "GNU General Public License v3.0 only",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/GPL-3.0-only.txt",
-    "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0"
+    "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+    "fingerprints": [
+      "GNU GENERAL PUBLIC LICENSE",
+      "Version 3, 29 June 2007",
+      "This program is free software: you can redistribute it",
+      "Corresponding Source"
+    ]
   },
   {
     "spdx": "GPL-3.0-or-later",
     "name": "GNU General Public License v3.0 or later",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/GPL-3.0-or-later.txt",
-    "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0"
+    "sha256": "fb981668c18a279e285fc4d83fba1e836cc84dd4daa73c9697d3cfd2d8aca6e0",
+    "fingerprints": [
+      "GNU GENERAL PUBLIC LICENSE",
+      "Version 3, 29 June 2007",
+      "either version 3 of the License, or (at your option) any later version",
+      "How to Apply These Terms to Your New Programs"
+    ]
   },
   {
     "spdx": "Unlicense",
     "name": "The Unlicense",
     "url": "https://raw.githubusercontent.com/spdx/license-list-data/master/text/Unlicense.txt",
-    "sha256": "0bdebfeda07d45dada625ae1317c6f833186e798b171d0db640bcf32e92a8240"
+    "sha256": "0bdebfeda07d45dada625ae1317c6f833186e798b171d0db640bcf32e92a8240",
+    "fingerprints": [
+      "This is free and unencumbered software released into the public domain",
+      "UNLICENSE",
+      "Anyone is free to copy, modify, publish, use"
+    ]
   }
 ]

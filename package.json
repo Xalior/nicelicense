@@ -1,6 +1,6 @@
 {
   "name": "nicelicense",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pick and manage LICENSE files with a guided CLI.",
   "bin": {
     "nicelicense": "dist/nicelicense.js"
