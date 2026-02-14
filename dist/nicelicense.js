@@ -168,7 +168,7 @@ function printHelp() {
         "  --description <text> Project description",
         "  --organization <org> Organization name",
         "  --list               Print supported SPDX IDs",
-        "  --validate           Validate existing LICENSE file",
+        "  --validate           Identify existing LICENSE file",
         "  --dry-run            Do not write files or update package.json",
         "  --stdout             Emit license text to stdout (no files written)",
         "  --verbose            Include URLs and metadata with --list",
@@ -229,7 +229,7 @@ async function downloadLicense(license) {
     return text;
 }
 function identifyLicense(existing, licenses) {
-    const normalized = normalize(existing.text);
+    const normalized = normalize(existing.text).toLowerCase();
     let bestMatch = null;
     for (const license of licenses) {
         if (!license.fingerprints || license.fingerprints.length === 0) {
@@ -238,7 +238,7 @@ function identifyLicense(existing, licenses) {
         let matchedCount = 0;
         for (const fingerprint of license.fingerprints) {
             // Case-insensitive substring match
-            if (normalized.toLowerCase().includes(fingerprint.toLowerCase())) {
+            if (normalized.includes(fingerprint.toLowerCase())) {
                 matchedCount++;
             }
         }
